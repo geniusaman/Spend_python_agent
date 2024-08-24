@@ -16,8 +16,6 @@ import logging
 # Configure logging
 logging.basicConfig(filename='logs/csv_agent.log', filemode='a', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-
-
 api_key = st.secrets["openai"]["OPENAI_API_KEY"]
 
 st.markdown(
@@ -112,8 +110,8 @@ st.markdown(
         display: block;
         margin-left: auto;
         margin-right: 10px;
-        width: 25px; /* Adjust the width as needed */
-        height: 25px;
+        width: 30px; /* Adjust the width as needed */
+        height: 30px;
         margin-bottom: auto; /* Adjust margin-bottom as needed */
     }
     .input-text {
@@ -173,21 +171,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 st.title("EaseAi Chatbot")
- 
 st.markdown("<h1 class='input-text'><b>🤖 Ask a question about the spend data</b></h1>", unsafe_allow_html=True)
-
-
-
-# openai_api_key = os.getenv("OPENAI_API_KEY")
-
-# st.set_page_config(page_title='CSV Agent',  layout='wide')
-
-
-# st.title("CSV Agent")
-# st.write("**Chat with your csv data**")
-
 
 logo_path = "logo.png"
 image = Image.open(logo_path)
@@ -198,54 +183,34 @@ else:
     st.error(f"Logo file not found at {logo_path}")
 sidebar_option = st.sidebar.selectbox(
     "Select Model",
-    ("gpt-4o-mini", "claude-haiku"))
+    ("gpt-4o-mini", "claude-haiku")
+)
 
-temperature = st.sidebar.slider('Select Temperature', min_value=0.0, max_value=1.0, value =0.1, step = 0.1)
-
+temperature = st.sidebar.slider('Select Temperature', min_value=0.0, max_value=1.0, value=0.1, step=0.1)
 
 csv_agent = PandasAgentOpenAI(api_key=api_key)
-# Persistent state for storing chat history
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-
 if prompt := st.chat_input("Enter your question"):
-    # Display user message in chat message container
-    # with st.chat_message("user"):
-    #     st.markdown(prompt)
-    # # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": {"query": prompt}})
 
 if prompt:
-    reply = csv_agent.run_agent(prompt)
-    LLM_reply = csv_agent.LLM_response(reply, prompt)
-    python_code = csv_agent.current_code
-    logging.info(f"query: {prompt}; python_code_generated: {python_code}")
-
-    # Handle different types of content in the reply
-    if "error" in reply:
-        st.markdown(reply["error"])
+    reply, python_code = csv_agent.run_agent(prompt)
     if "plot_data" in reply:
-        plot_data = reply.get("plot_data", None)
-        if plot_data is not None:
-            plot_data = plot_data[0]
-            image_data = base64.b64decode(plot_data)
-            image = Image.open(io.BytesIO(image_data))
-            # st.image(image)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-
+        LLM_reply = reply
+        st.session_state.messages.append({"role": "assistant", "content": LLM_reply, "code": python_code})
     else:
-       st.session_state.messages.append({"role": "assistant", "content": LLM_reply})
+        LLM_reply = csv_agent.LLM_response(reply, python_code, prompt)
+        st.session_state.messages.append({"role": "assistant", "content": LLM_reply, "code": python_code})
+   
 
-for message in st.session_state.messages:
-    # st.write(message)
+for  message in st.session_state.messages:
     if message["role"] == "user":
-        #https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/640px-User_icon_2.svg.png
         logo_url = "https://icons.veryicon.com/png/o/miscellaneous/two-color-icon-library/user-286.png"
         st.markdown(f"<img src='{logo_url}' class='logo-bot1'>", unsafe_allow_html=True)
         st.markdown(f"<div class='user-msg'>{message['content']['query']}</div>", unsafe_allow_html=True)
-        
-        # st.chat_message("user").markdown(message["content"]["query"])
     else:
         if "plot_data" in message["content"]:
             plot_data = message["content"].get("plot_data", None)
@@ -254,11 +219,18 @@ for message in st.session_state.messages:
                 image_data = base64.b64decode(plot_data)
                 image = Image.open(io.BytesIO(image_data))
                 st.image(image)
+                with st.expander("Show Code"):
+                    st.code(message["code"], language="python")
+                
+            
         else:
-            # Render the AI's message
             logo_url = "https://github.com/grv13/LoginPage-main/assets/118931467/aaac9655-af61-4d10-a569-4cd8e382280d"
             st.markdown(f"<img src='{logo_url}' class='logo-bot'>", unsafe_allow_html=True)
             st.markdown(f"<div class='ai-msg'>{message['content']}</div>", unsafe_allow_html=True)
-
-
-
+            with st.expander("Show Code"):
+                st.code(message["code"], language="python")
+        # # # Display the "Show Code" option
+        # # if "code" in message:
+        #     with st.expander("Show Code"):
+        #         st.code(message['assistant']["code"], language="python")
+                
