@@ -287,7 +287,7 @@ class PandasAgentOpenAI:
             model="gpt-4o-mini",
             max_retries=self.max_retries_first_response,
             messages=[
-                {"role": "user", "content":f"""Give an explanation in layman terms for a stakeholder to be able to understand for a given answer:\n{final_reponse} to a specific query:{query}, the answer was derived from this python code{code}.Do not modify original answer Display as it is. Wherever you find an answer that should be in a table, place it in a table. If tables are not required, then express the information in a sentence.
+                {"role": "user", "content":f"""Give an explanation in layman terms for a stakeholder to be able to understand for a given answer:\n{final_reponse} to a specific query:{query}, the answer was derived from this python code{code}.Do not modify original answer . Wherever you find an answer that should be in a table, place it in a table. If tables are not required, then express the information in a sentence.
                 **Output structure:(Headings should be bold use <b></b>  and this fromat should be beatifully formatted)
                 Answer
                 
