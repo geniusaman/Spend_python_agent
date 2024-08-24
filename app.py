@@ -7,7 +7,6 @@ import traceback
 from PIL import Image
 import datetime
 import time
-from dotenv import load_dotenv
 import os
 import base64
 from agents.openai_agent import PandasAgentOpenAI
