@@ -242,7 +242,7 @@ class PandasAgentOpenAI:
 
         # context = f"Query no. {self.query_count}: {query}"
         context = f"{model_response.corrected_python_code}"
-        context1 = f"{model_response.python_code}"
+        context1 = f"{model_response.corrected_python_code}"
         # print("\n\n generated correct code: \n\n ", context)
         if "error" in final_result:
             context += "\n" + f"Error: {final_result.get('error', None)}"
