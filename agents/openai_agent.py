@@ -189,8 +189,9 @@ class PandasAgentOpenAI:
         result_dict = self.run_python_code(model_response.python_code)
         final_result = self.format_result(result_dict)
 
-        context = f"Query no. {self.query_count}: {query}"
-        context += "\n" f"Code generated for the query: {model_response.python_code}"
+        # context = f"Query no. {self.query_count}: {query}"
+        context = f"{model_response.python_code}"
+        context1 = f"{model_response.python_code}"
         # print("\n generated initial code: \n ", context)
 
         if "error" in final_result:
@@ -217,7 +218,7 @@ class PandasAgentOpenAI:
 
         self.add_context(context)
     
-        return final_result , context
+        return final_result , context1
 
     def get_code_correction(self, query, error):
         self.current_code = ""
@@ -239,8 +240,9 @@ class PandasAgentOpenAI:
         result_dict = self.run_python_code(model_response.corrected_python_code)
         final_result = self.format_result(result_dict)
 
-        context = f"Query no. {self.query_count}: {query}"
-        context += "\n" f"Code re-generated for the query: {model_response.corrected_python_code}"
+        # context = f"Query no. {self.query_count}: {query}"
+        context = f"{model_response.corrected_python_code}"
+        context1 = f"{model_response.python_code}"
         # print("\n\n generated correct code: \n\n ", context)
         if "error" in final_result:
             context += "\n" + f"Error: {final_result.get('error', None)}"
@@ -266,28 +268,27 @@ class PandasAgentOpenAI:
 
         self.add_context(context)
         
-        return final_result
+        return final_result, context1
 
 
     def run_agent(self, query):
-        self.current_answer,_ = self.get_answer_to_query(query)
+        self.current_answer, self.current_code = self.get_answer_to_query(query)
         if "error" in self.current_answer or "":
             for retry_num in range(self.max_retries_code_correction):
                 error = self.current_answer.get("error")
-                self.current_answer,_ = self.get_code_correction(query, error)
+                self.current_answer, self.current_code = self.get_code_correction(query, error)
                 if "error" not in self.current_answer:
                     break
         print("\n\nPythonAgent:\n", self.current_answer)
-        return self.current_answer
+        return self.current_answer, self.current_code
     
-    def LLM_response(self, final_reponse, query):
-        _,self.current_code= self.get_answer_to_query(query)
+    def LLM_response(self, final_reponse, code, query):
         model_response = self.client.chat.completions.create(
             model="gpt-4o-mini",
             max_retries=self.max_retries_first_response,
             messages=[
-                {"role": "user", "content":f"""Give an explanation in layman terms for a stakeholder to be able to understand for a given answer:\n{final_reponse} to a specific query:{query}, the answer was derived from this python code{self.current_code}.Do not add any additional information in the given answer. Wherever you find an answer that should be in a table, place it in a table. If tables are not required, then express the information in a sentence.
-                Output structure:(Headings should be bold use </b>  and this fromat should be beatifully formatted)
+                {"role": "user", "content":f"""Give an explanation in layman terms for a stakeholder to be able to understand for a given answer:\n{final_reponse} to a specific query:{query}, the answer was derived from this python code{code}.Do not modify original answer Display as it is. Wherever you find an answer that should be in a table, place it in a table. If tables are not required, then express the information in a sentence.
+                **Output structure:(Headings should be bold use <b></b>  and this fromat should be beatifully formatted)
                 Answer
                 
                 Explanation 
